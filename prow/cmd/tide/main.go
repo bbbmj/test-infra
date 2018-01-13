@@ -136,6 +136,8 @@ func main() {
 	if err != nil {
 		logrus.WithError(err).Fatal("Error getting git client.")
 	}
+
+	gc.SetCredentials(*githubUsername, oauthSecret)
 	defer gc.Clean()
 	// Get the bot's name in order to set credentials for the git client.
 	botName, err := ghcSync.BotName()
