@@ -52,6 +52,7 @@ var (
 	deckURL = flag.String("deck-url", "", "Deck URL for read-only access to the cluster.")
 
 	githubEndpoint  = flag.String("github-endpoint", "https://api.github.com", "GitHub's API endpoint.")
+	githubUsername  = flag.String("github-username", "caicloud-bot", "GitHub's username.")
 	githubTokenFile = flag.String("github-token-file", "/etc/github/oauth", "Path to the file containing the GitHub OAuth secret.")
 
 	webhookSecretFile = flag.String("hmac-secret-file", "/etc/webhook/hmac", "Path to the file containing the GitHub HMAC secret.")
@@ -133,6 +134,8 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Error getting git client.")
 	}
+	// set github cerdential to clone repo.
+	gitClient.SetCredentials(*githubUsername, oauthSecret)
 
 	pluginAgent := &plugins.PluginAgent{}
 
