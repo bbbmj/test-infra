@@ -44,7 +44,6 @@ var (
 	configPath = flag.String("config-path", "/etc/config/config", "Path to config.yaml.")
 	cluster    = flag.String("cluster", "", "Path to kube.Cluster YAML file. If empty, uses the local cluster.")
 
-	githubUsername  = flag.String("github-username", "caicloud-bot", "GitHub's Username.")
 	githubEndpoint  = flag.String("github-endpoint", "https://api.github.com", "GitHub's API endpoint.")
 	githubTokenFile = flag.String("github-token-file", "/etc/github/oauth", "Path to the file containing the GitHub OAuth token.")
 )
@@ -95,8 +94,6 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Error getting git client.")
 	}
-
-	gc.SetCredentials(*githubUsername, oauthSecret)
 	defer gc.Clean()
 
 	c := tide.NewController(ghc, kc, configAgent, gc, logger)
