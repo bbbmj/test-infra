@@ -763,6 +763,18 @@ func (c *Client) ListIssueComments(org, repo string, number int) ([]IssueComment
 	return comments, nil
 }
 
+// GetCommit gets a commit.
+func (c *Client) GetCommit(owner, repo, sha string) (*CommitData, error) {
+	c.log("GetCommit", owner, repo, sha)
+	var commit CommitData
+	_, err := c.request(&request{
+		method:    http.MethodGet,
+		path:      fmt.Sprintf("%s/repos/%s/%s/git/commits/%s", c.base, owner, repo, sha),
+		exitCodes: []int{200},
+	}, &commit)
+	return &commit, err
+}
+
 // GetPullRequest gets a pull request.
 //
 // See https://developer.github.com/v3/pulls/#get-a-single-pull-request

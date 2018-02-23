@@ -155,6 +155,46 @@ type PullRequestEvent struct {
 	GUID string
 }
 
+// CommitData contains information about a commit.
+type CommitData struct {
+	Sha          string       `json:"sha"`
+	URL          string       `json:"url"`
+	Author       Author       `json:"author"`
+	Committer    Committer    `json:"committer"`
+	Message      string       `json:"message"`
+	Tree         Tree         `json:"tree"`
+	Parents      Parents      `json:"parents"`
+	Verification Verification `json:"verification"`
+}
+type Author struct {
+	Date  time.Time `json:"date"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+}
+
+type Committer struct {
+	Date  time.Time `json:"date"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+}
+
+type Tree struct {
+	URL string `json:"url"`
+	Sha string `json:"sha"`
+}
+
+type Parents []struct {
+	URL string `json:"url"`
+	Sha string `json:"sha"`
+}
+
+type Verification struct {
+	Verified  bool   `json:"verified"`
+	Reason    string `json:"reason"`
+	Signature string `json:"signature"`
+	Payload   string `json:"payload"`
+}
+
 // PullRequest contains information about a PullRequest.
 type PullRequest struct {
 	Number             int               `json:"number"`
