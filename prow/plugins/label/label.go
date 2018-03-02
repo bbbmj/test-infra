@@ -17,6 +17,7 @@ limitations under the License.
 package label
 
 import (
+	"flag"
 	"fmt"
 	"regexp"
 	"strings"
@@ -31,10 +32,9 @@ import (
 const pluginName = "label"
 
 var (
-	labelRegex              = regexp.MustCompile(`(?m)^/(area|committee|kind|priority|sig|triage)\s*(.*)$`)
-	removeLabelRegex        = regexp.MustCompile(`(?m)^/remove-(area|committee|kind|priority|sig|triage)\s*(.*)$`)
-	customLabelRegex        = regexp.MustCompile(`(?m)^/label\s*(.*)$`)
-	customRemoveLabelRegex  = regexp.MustCompile(`(?m)^/remove-label\s*(.*)$`)
+	labelRegex              = regexp.MustCompile(`(?m)^/(area|committee|kind|priority|sig|branch|queue|version|scrum|status|from|rc|rt|type|product|need)\s*(.*)$`)
+	removeLabelRegex        = regexp.MustCompile(`(?m)^/remove-(area|committee|kind|priority|sig|branch|queue|version|scrum|status|from|rc|rt|type|product|need)\s*(.*)$`)
+	singleChoice            = flag.String("single-choice", "area,kind,priority,queue,scrum,status,from,rc,rt,type,product", "Comma separated list of command that needs support single-choice")
 	nonExistentLabelOnIssue = "Those labels are not set on the issue: `%v`"
 )
 
@@ -45,10 +45,10 @@ func init() {
 func helpProvider(config *plugins.Configuration, enabledRepos []string) (*pluginhelp.PluginHelp, error) {
 	// The Config field is omitted because this plugin is not configurable.
 	pluginHelp := &pluginhelp.PluginHelp{
-		Description: "The label plugin provides commands that add or remove certain types of labels. Labels of the following types can be manipulated: 'area/*', 'committee/*', 'kind/*', 'priority/*', 'sig/*', and 'triage/*'. More labels can be configured to be used via the /label command.",
+		Description: "The label plugin provides commands that add or remove certain types of labels. Labels of the following types can be manipulated: 'area/*', 'committee/*', 'kind/*', 'priority/*', 'sig/*' , 'branch/*', 'queue/*', 'version/*', 'scrum/*', 'status/*', 'from/*', 'rc/*', 'rt/*', 'type/*', 'product/*' and 'need/*'. Labels of the following types is single selection: 'area/*', 'kind/*', 'priority/*', 'queue/*', 'scrum/*', 'status/*', 'from/*', 'rc/*', 'rt/*', 'type/*' and 'product/*'.",
 	}
 	pluginHelp.AddCommand(pluginhelp.Command{
-		Usage:       "/[remove-](area|committee|kind|priority|sig|triage|label) <target>",
+		Usage:       "/[remove-](area|committee|kind|priority|sig|branch|queue|version|scrum|status|from|rc|rt|type|product) <target>",
 		Description: "Applies or removes a label from one of the recognized types of labels.",
 		Featured:    false,
 		WhoCanUse:   "Anyone can trigger this command on a PR.",
@@ -58,11 +58,7 @@ func helpProvider(config *plugins.Configuration, enabledRepos []string) (*plugin
 }
 
 func handleGenericComment(pc plugins.PluginClient, e github.GenericCommentEvent) error {
-	var labels []string
-	if pc.PluginConfig.Label != nil {
-		labels = pc.PluginConfig.Label.AdditionalLabels
-	}
-	return handle(pc.GitHubClient, pc.Logger, labels, &e)
+	return handle(pc.GitHubClient, pc.Logger, &e)
 }
 
 type githubClient interface {
@@ -84,33 +80,15 @@ func getLabelsFromREMatches(matches [][]string) (labels []string) {
 	return
 }
 
-// getLabelsFromGenericMatches returns label matches with extra labels if those
-// have been configured in the plugin config.
-func getLabelsFromGenericMatches(matches [][]string, additionalLabels []string) []string {
-	if len(additionalLabels) == 0 {
+func handle(gc githubClient, log *logrus.Entry, e *github.GenericCommentEvent) error {
+	// Only consider create event, as edit event may cover newer comment event.
+	if e.Action != github.GenericCommentActionCreated {
 		return nil
 	}
-	var labels []string
-	for _, match := range matches {
-		parts := strings.Split(match[0], " ")
-		if ((parts[0] != "/label") && (parts[0] != "/remove-label")) || len(parts) != 2 {
-			continue
-		}
-		for _, l := range additionalLabels {
-			if l == parts[1] {
-				labels = append(labels, parts[1])
-			}
-		}
-	}
-	return labels
-}
 
-func handle(gc githubClient, log *logrus.Entry, additionalLabels []string, e *github.GenericCommentEvent) error {
 	labelMatches := labelRegex.FindAllStringSubmatch(e.Body, -1)
 	removeLabelMatches := removeLabelRegex.FindAllStringSubmatch(e.Body, -1)
-	customLabelMatches := customLabelRegex.FindAllStringSubmatch(e.Body, -1)
-	customRemoveLabelMatches := customRemoveLabelRegex.FindAllStringSubmatch(e.Body, -1)
-	if len(labelMatches) == 0 && len(removeLabelMatches) == 0 && len(customLabelMatches) == 0 && len(customRemoveLabelMatches) == 0 {
+	if len(labelMatches) == 0 && len(removeLabelMatches) == 0 {
 		return nil
 	}
 
@@ -138,8 +116,8 @@ func handle(gc githubClient, log *logrus.Entry, additionalLabels []string, e *gi
 	)
 
 	// Get labels to add and labels to remove from regexp matches
-	labelsToAdd = append(getLabelsFromREMatches(labelMatches), getLabelsFromGenericMatches(customLabelMatches, additionalLabels)...)
-	labelsToRemove = append(getLabelsFromREMatches(removeLabelMatches), getLabelsFromGenericMatches(customRemoveLabelMatches, additionalLabels)...)
+	labelsToAdd = getLabelsFromREMatches(labelMatches)
+	labelsToRemove = getLabelsFromREMatches(removeLabelMatches)
 
 	// Add labels
 	for _, labelToAdd := range labelsToAdd {
