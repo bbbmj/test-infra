@@ -1051,8 +1051,6 @@ func (sq *SubmitQueue) validForMergeExt(obj *github.MungeObject, checkStatus boo
 	gateCLA := sq.GateCLA
 	gateApproved := sq.GateApproved
 	doNotMergeMilestones := sq.DoNotMergeMilestones
-	mergeContexts := mungeopts.RequiredContexts.Merge
-	retestContexts := mungeopts.RequiredContexts.Retest
 	additionalLabels := sq.AdditionalRequiredLabels
 	blockingLabels := sq.BlockingLabels
 	claYesLabels := sq.ClaYesLabels
@@ -1095,17 +1093,10 @@ func (sq *SubmitQueue) validForMergeExt(obj *github.MungeObject, checkStatus boo
 
 	// Validate the status information for this PR
 	if checkStatus {
-		if len(mergeContexts) > 0 {
-			if success, ok := obj.IsStatusSuccess(mergeContexts); !ok || !success {
-				sq.setContextFailedStatus(obj, mergeContexts)
-				return false
-			}
-		}
-		if len(retestContexts) > 0 {
-			if success, ok := obj.IsStatusSuccess(retestContexts); !ok || !success {
-				sq.setContextFailedStatus(obj, retestContexts)
-				return false
-			}
+		// Validate all statues except submit-queue
+		if success, ok := obj.IsStatusSuccessExceptSpecifiedContexts([]string{sqContext}); !ok || !success {
+			sq.SetMergeStatus(obj, ciFailure)
+			return false
 		}
 	}
 

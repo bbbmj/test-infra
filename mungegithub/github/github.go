@@ -1509,6 +1509,37 @@ func computeStatus(combinedStatus *github.CombinedStatus, requiredContexts []str
 	}
 }
 
+func computeStatusExceptSpecifiedContexts(combinedStatus *github.CombinedStatus, exceptedContexts []string) string {
+	states := sets.String{}
+
+	if len(exceptedContexts) == 0 {
+		return *combinedStatus.State
+	}
+
+	if len(exceptedContexts) == len(combinedStatus.Statuses) {
+		return "success"
+	}
+
+	excepted := sets.NewString(exceptedContexts...)
+	for _, status := range combinedStatus.Statuses {
+		if excepted.Has(*status.Context) {
+			continue
+		}
+		states.Insert(*status.State)
+	}
+
+	switch {
+	case states.Has("pending"):
+		return "pending"
+	case states.Has("error"):
+		return "error"
+	case states.Has("failure"):
+		return "failure"
+	default:
+		return "success"
+	}
+}
+
 func (obj *MungeObject) getCombinedStatus() (status *github.CombinedStatus, ok bool) {
 	now := time.Now()
 	if now.Before(obj.combinedStatusTime.Add(combinedStatusLifetime)) {
@@ -1607,6 +1638,28 @@ func (obj *MungeObject) GetStatusState(requiredContexts []string) (string, bool)
 		return "failure", ok
 	}
 	return computeStatus(combinedStatus, requiredContexts), ok
+}
+
+// GetStatusStateExceptSpecifiedContexts gets the current status of a PR except the specified contexts.
+//    * If any is 'pending', the PR is 'pending'
+//    * If any is 'error', the PR is in 'error'
+//    * If any is 'failure', the PR is 'failure'
+//    * Otherwise the PR is 'success'
+func (obj *MungeObject) GetStatusStateExceptSpecifiedContexts(exceptedContexts []string) (string, bool) {
+	combinedStatus, ok := obj.getCombinedStatus()
+	if !ok || combinedStatus == nil {
+		return "failure", ok
+	}
+	return computeStatusExceptSpecifiedContexts(combinedStatus, exceptedContexts), ok
+}
+
+// IsStatusSuccessExceptSpecifiedContexts makes sure that the combined status for all commits in a PR is 'success'
+func (obj *MungeObject) IsStatusSuccessExceptSpecifiedContexts(exceptedContexts []string) (bool, bool) {
+	status, ok := obj.GetStatusStateExceptSpecifiedContexts(exceptedContexts)
+	if ok && status == "success" {
+		return true, ok
+	}
+	return false, ok
 }
 
 // IsStatusSuccess makes sure that the combined status for all commits in a PR is 'success'
