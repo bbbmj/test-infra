@@ -26,6 +26,8 @@ import (
 	"k8s.io/test-infra/prow/plugins"
 )
 
+const deprecatedWarn = false
+
 var (
 	lifecycleFrozenLabel = "lifecycle/frozen"
 	lifecycleStaleLabel  = "lifecycle/stale"
