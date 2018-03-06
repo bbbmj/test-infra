@@ -152,6 +152,22 @@ func handle(gc githubClient, log *logrus.Entry, additionalLabels []string, e *gi
 			continue
 		}
 
+		prefixes := strings.Split(*singleChoice, ",")
+		prefixesMap := map[string]string{}
+		for _, p := range prefixes {
+			prefixesMap[strings.ToLower(p)] = p
+		}
+
+		labelPrefix := strings.Split(labelToAdd, "/")
+		for _, label := range labels {
+			if _, ok := prefixesMap[labelPrefix[0]]; ok && strings.HasPrefix(label.Name, labelPrefix[0]) {
+				if err := gc.RemoveLabel(org, repo, e.Number, label.Name); err != nil {
+					log.WithError(err).Errorf("Github failed to remove the following label: %s", label.Name)
+				}
+				break
+			}
+		}
+
 		if err := gc.AddLabel(org, repo, e.Number, existingLabels[labelToAdd]); err != nil {
 			log.WithError(err).Errorf("Github failed to add the following label: %s", labelToAdd)
 		}
