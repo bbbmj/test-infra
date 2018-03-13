@@ -243,6 +243,44 @@ func TestHandlePR(t *testing.T) {
 			addedLabels:   []string{fmt.Sprintf("%s", claNoLabel)},
 			removedLabels: []string{fmt.Sprintf("%s", claYesLabel)},
 		},
+		"have label `caicloud-cla: yes`, is member, generate commit with GitHub, cla ready": {
+			labels:   sets.NewString(claYesLabel),
+			isMember: true,
+			commit: &github.CommitData{
+				Author: github.Author{
+					Email: "bmj@caicloud.io",
+				},
+				Committer: github.Committer{
+					Name:  githubName,
+					Email: "bmj@caicloud.io",
+				},
+			},
+			pr: &github.PullRequest{
+				Number: 101,
+			},
+			action:        github.PullRequestActionEdited,
+			addedLabels:   nil,
+			removedLabels: nil,
+		},
+		"have label `caicloud-cla: no`, is member, generate commit with GitHub, cla ready": {
+			labels:   sets.NewString(claNoLabel),
+			isMember: true,
+			commit: &github.CommitData{
+				Author: github.Author{
+					Email: "bmj@caicloud.io",
+				},
+				Committer: github.Committer{
+					Name:  githubName,
+					Email: "bmj@caicloud.io",
+				},
+			},
+			pr: &github.PullRequest{
+				Number: 101,
+			},
+			action:        github.PullRequestActionEdited,
+			addedLabels:   []string{fmt.Sprintf("%s", claYesLabel)},
+			removedLabels: []string{fmt.Sprintf("%s", claNoLabel)},
+		},
 	}
 
 	for name, c := range cases {
