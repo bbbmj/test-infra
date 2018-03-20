@@ -74,6 +74,10 @@ type lifecycleClient interface {
 	GetIssueLabels(org, repo string, number int) ([]github.Label, error)
 }
 
+func deprecate(gc commentClient, plugin, org, repo string, number int, e *github.GenericCommentEvent) error {
+	return nil
+}
+
 func lifecycleHandleGenericComment(pc plugins.PluginClient, e github.GenericCommentEvent) error {
 	gc := pc.GitHubClient
 	log := pc.Logger
