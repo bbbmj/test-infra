@@ -13,6 +13,7 @@ import (
 
 const (
 	githubName                 = "GitHub"
+	botName                    = "caicloud-bot"
 	pluginName                 = "caicloud-cla"
 	claYesLabel                = "caicloud-cla: yes"
 	claNoLabel                 = "caicloud-cla: no"
@@ -89,9 +90,10 @@ func handlePR(gc githubClient, log *logrus.Entry, pe github.PullRequestEvent) er
 
 	// The CLA enforce the github author name must be caicloud.io domain
 	// The committer name can be `GitHub` if the author generate a commit through GitHub
+	// The committer can be `caicloud-bot` if cherry-pick.
 	claReady := false
 	if emailRe.MatchString(commit.Author.Email) {
-		if commit.Committer.Email == commit.Author.Email || commit.Committer.Name == githubName {
+		if commit.Committer.Email == commit.Author.Email || commit.Committer.Name == githubName || commit.Committer.Name == botName {
 			claReady = true
 		}
 	}
