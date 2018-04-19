@@ -56,13 +56,13 @@ ARTIFACT-UPLOADER_VERSION ?= $(TAG)
 NEEDS_REBASE_VERSION      ?= $(TAG)
 
 # These are the usual GKE variables.
-PROJECT       ?= k8s-prow
+PROJECT       ?= caicloud
 BUILD_PROJECT ?= k8s-prow-builds
 ZONE          ?= us-central1-f
 CLUSTER       ?= prow
 
 # Build and push specific variables.
-REGISTRY ?= gcr.io
+REGISTRY ?= cargo.caicloudprivatetest.com
 PUSH     ?= docker push
 
 DOCKER_LABELS:=--label io.k8s.prow.git-describe="$(shell git describe --tags --always --dirty)"
@@ -203,7 +203,7 @@ pushgateway-deploy: get-cluster-credentials
 
 .PHONY: jenkins-operator-image jenkins-operator-deployment pushgateway-deploy
 
-tide-image: git-image
+tide-image:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cmd/tide/tide k8s.io/test-infra/prow/cmd/tide
 	docker build -t "$(REGISTRY)/$(PROJECT)/tide:$(TIDE_VERSION)" $(DOCKER_LABELS) cmd/tide
 	$(PUSH) "$(REGISTRY)/$(PROJECT)/tide:$(TIDE_VERSION)"

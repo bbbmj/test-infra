@@ -129,8 +129,8 @@ func main() {
 	// The sync loop should have a much lower burst allowance than the status
 	// loop which may need to update many statuses upon restarting Tide after
 	// changing the context format or starting Tide on a new repo.
-	ghcSync.Throttle(800, 20)
-	ghcStatus.Throttle(400, 200)
+	ghcSync.Throttle(2400, 60)
+	ghcStatus.Throttle(1200, 300)
 
 	gc, err := git.NewClient()
 	if err != nil {
