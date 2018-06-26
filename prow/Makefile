@@ -111,6 +111,13 @@ branchprotector-cronjob: get-cluster-credentials
 
 .PHONY: branchprotector-image branchprotector-cronjob
 
+cherrypicker-image:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o external-plugins/cherrypicker/cherrypicker k8s.io/test-infra/prow/external-plugins/cherrypicker
+	docker build -t "$(REGISTRY)/$(PROJECT)/cherrypicker:$(CHERRYPICKER_VERSION)" $(DOCKER_LABELS) external-plugins/cherrypicker
+	$(PUSH) "$(REGISTRY)/$(PROJECT)/cherrypicker:$(CHERRYPICKER_VERSION)"
+
+.PHONY: cherrypicker-image
+
 hook-image: git-image
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cmd/hook/hook k8s.io/test-infra/prow/cmd/hook
 	docker build -t "$(REGISTRY)/$(PROJECT)/hook:$(HOOK_VERSION)" $(DOCKER_LABELS) cmd/hook
